@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>Nuvei Simply Connect 2.0 Demo — 中文测试</title>
+  <title>Nuvei Simply Connect 2.0 - Chinese</title>
 
   <!-- SimplyConnect.js library -->
   <script src="https://cdn.safecharge.com/safecharge_resources/v1/websdk//simplyConnect_v2.js"></script>
@@ -24,11 +24,11 @@
   </style>
 </head>
 <body>
-  <h2>Nuvei Simply Connect 2.0 — 中文测试</h2>
+  <h2>Nuvei Simply Connect 2.0 — Chinese</h2>
 
-  <p class="muted">将从 POST /orders 得到的 <code>sessionId</code> 粘贴到下面并点击“初始化”。</p>
+  <p class="muted">将从 POST /orders 得到的 <code>sessionId</code> 粘贴到下面并点击 Initialize。</p>
   <input type="text" id="sessionId" placeholder="请输入 sessionId" size="60" />
-  <button id="initBtn">初始化 Simply Connect</button>
+  <button id="initBtn">Initialize Simply Connect</button>
   <pre id="initResult"></pre>
 
   <!-- Payment form container -->
@@ -66,7 +66,7 @@
             onResult: function(result) {
               console.log("Transaction Result:", result);
               if (!result || !result.result || !result.result.status) {
-                initResult.textContent = "❌ 支付失败：sessionId 无效或已过期。";
+                initResult.textContent = "支付失败：sessionId 无效或已过期。";
                 simplyConnectContainer.style.display = "none";
                 transactionResult.textContent = "因 session 问题未进行交易。";
                 return;
@@ -77,7 +77,7 @@
             },
             onError: function(error) {
               console.error("Payment Error:", error);
-              initResult.textContent = "❌ 初始化或支付过程出错：" + (error?.reason || JSON.stringify(error));
+              initResult.textContent = "初始化或支付过程出错：" + (error?.reason || JSON.stringify(error));
               simplyConnectContainer.style.display = "none";
               transactionResult.textContent = "因错误未进行交易。";
             }
@@ -161,7 +161,7 @@
         initResult.textContent = "✅ Simply Connect 初始化成功。支付表单已显示。";
       } catch (err) {
         console.error("初始化错误：", err);
-        initResult.textContent = "❌ 初始化失败：" + (err?.message || JSON.stringify(err));
+        initResult.textContent = "初始化失败：" + (err?.message || JSON.stringify(err));
         simplyConnectContainer.style.display = "none";
       }
     }
@@ -169,7 +169,7 @@
     initBtn.addEventListener("click", () => {
       const sessionId = document.getElementById("sessionId").value.trim();
       if (!sessionId) {
-        initResult.textContent = "❌ 请输入有效的 sessionId。";
+        initResult.textContent = "请输入有效的 sessionId。";
         return;
       }
       initializeSimplyConnect(sessionId);
