@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>Nuvei Simply Connect 2.0 — 中文测试</title>
+  <title>Nuvei Simply Connect 2.0 — 中文演示</title>
 
   <!-- SimplyConnect.js library -->
   <script src="https://cdn.safecharge.com/safecharge_resources/v1/websdk/simplyConnect_v2.js"></script>
@@ -10,25 +10,17 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 2em; }
     input, button { padding: 0.5em; font-size: 1em; margin: 0.5em 0; }
-    #simplyConnect { width: 420px; min-height: 400px; border: 1px solid #d3dce6; margin-top: 1em; padding: 0.5em; }
+    #simplyConnect { width: 400px; height: 600px; border: 1px solid #d3dce6; margin-top: 1em; }
     pre { background: #f5f5f5; padding: 1em; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
     #resultContainer { margin-top: 2em; }
-    .muted { color: #666; font-size: 0.9em; }
-
-    /* Hide the dustbin/delete button in My Saved Methods */
-    .sc-delete-token-btn, 
-    button.sc-delete-token-btn {
-      display: none !important;
-    }
   </style>
 </head>
 <body>
-  <h2>Nuvei Simply Connect 2.0 — 中文测试</h2>
+  <h2>Nuvei Simply Connect 2.0 — 中文演示</h2>
 
-  <p class="muted">将从 POST /orders 得到的 <code>sessionId</code> 粘贴到下面并点击“初始化”。</p>
+  <p>将从 POST /orders 得到的 <code>sessionId</code> 粘贴到下面：</p>
   <input type="text" id="sessionId" placeholder="请输入 sessionId" size="60" />
   <button id="initBtn">初始化 Simply Connect</button>
-
   <pre id="initResult"></pre>
 
   <div id="simplyConnect">
@@ -46,36 +38,37 @@
     const transactionResult = document.getElementById("transactionResult");
     const simplyConnectContainer = document.getElementById("simplyConnect");
 
-    function clearWidget() {
-      simplyConnectContainer.innerHTML = "";
-      simplyConnectContainer.style.display = "block";
-    }
-
-    function initializeSimplyConnect(sessionId) {
-      clearWidget();
-      window._currentSimplyConnectSessionId = sessionId;
+    initBtn.addEventListener("click", () => {
+      const sessionId = document.getElementById("sessionId").value.trim();
+      if (!sessionId) {
+        initResult.textContent = "❌ 请输入有效的 sessionId。";
+        return;
+      }
 
       try {
         window.simplyConnect({
-          env: 'int', // 'prod' for production
+          env: 'int', // "prod" for production
           renderTo: "#simplyConnect",
           sessionId: sessionId,
           eventCallbacks: {
             onResult: function(result) {
               console.log("交易结果:", result);
+
               if (!result || !result.result || !result.result.status) {
                 initResult.textContent = "❌ 支付失败：sessionId 无效或已过期。";
                 simplyConnectContainer.style.display = "none";
                 transactionResult.textContent = "因 session 问题未进行交易。";
                 return;
               }
+
               simplyConnectContainer.style.display = "none";
               transactionResult.textContent = JSON.stringify(result, null, 2);
               initResult.textContent = `✅ 支付完成，状态：${result.result.status}`;
             },
             onError: function(error) {
               console.error("支付错误:", error);
-              initResult.textContent = "❌ 初始化或支付过程出错：" + (error?.reason || JSON.stringify(error));
+              initResult.textContent = "❌ 初始化或支付过程出错：" + 
+                                        (error?.reason || JSON.stringify(error));
               simplyConnectContainer.style.display = "none";
               transactionResult.textContent = "因错误未进行交易。";
             }
@@ -88,6 +81,7 @@
               cc_card: "信用卡",
               lbl_my_methods: "我的支付方式",
               lbl_other_methods: "请选择支付方式",
+              lbl_pm_details: "支付详情",
               btn_pay_with: "使用 {method} 支付",
               btn_pay: "支付",
               btn_cancel: "取消",
@@ -100,7 +94,9 @@
               card_cvc: "安全码 (CVC)",
               card_name: "持卡人姓名",
               lbl_saved_cards: "已保存的卡片",
-              lbl_save_card: "保存此卡以便下次使用"
+              lbl_save_card: "保存此卡以便下次使用",
+              lbl_billing_address: "账单地址",
+              lbl_shipping_address: "送货地址"
             },
             error_i18n: {
               decline: "您的支付被拒绝，请联系发卡行。",
@@ -113,19 +109,10 @@
 
         initResult.textContent = "✅ Simply Connect 初始化成功。支付表单已显示。";
       } catch (err) {
-        console.error("初始化错误：", err);
         initResult.textContent = "❌ 初始化失败：" + (err?.message || JSON.stringify(err));
         simplyConnectContainer.style.display = "none";
+        transactionResult.textContent = "因初始化错误未进行交易。";
       }
-    }
-
-    initBtn.addEventListener("click", () => {
-      const sessionId = document.getElementById("sessionId").value.trim();
-      if (!sessionId) {
-        initResult.textContent = "❌ 请输入有效的 sessionId。";
-        return;
-      }
-      initializeSimplyConnect(sessionId);
     });
   </script>
 </body>
