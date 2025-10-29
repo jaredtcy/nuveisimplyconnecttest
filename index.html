@@ -12,10 +12,10 @@
     input, button { padding: 0.5em; font-size: 1em; margin: 0.5em 0; }
     #simplyConnect { 
       width: 400px; 
-      min-height: 700px; /* increase height to prevent overlap */
+      min-height: 700px; /* prevent overlap */
       border: 1px solid #d3dce6; 
       margin-top: 1em; 
-      margin-bottom: 3em; /* more space below the form */
+      margin-bottom: 4em; /* more space below form */
       padding: 0.5em;
     }
     pre { background: #f5f5f5; padding: 1em; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
@@ -90,6 +90,7 @@
             locale: "zh",
             textDirection: "ltr",
             i18n: {
+              // General labels
               cc_card: "信用卡",
               lbl_my_methods: "我的支付方式",
               lbl_other_methods: "请选择支付方式",
@@ -111,6 +112,8 @@
               msg_refresh_invalid_session: "会话已过期，请点击刷新按钮重试。",
               msg_pending: "交易待处理",
               msg_apm_redirect: "未看到 {label} 页面？我们将帮助您返回完成购买。",
+
+              // Card input labels
               lbl_card_number: "卡号",
               lbl_cvv: "安全码 (CVC)",
               lbl_expiry_date: "有效期",
@@ -119,14 +122,18 @@
               ph_cvv: "123",
               ph_mm_yy: "MM/YY",
               ph_name_on_card: "张三",
-              btn_close: "关闭",
-              btn_pay: "支付",
-              btn_continue: "继续",
               lbl_save_details: "保存我的信息以便下次使用",
               lbl_always_save_card_details_msg: "继续即表示您同意安全存储卡信息以供下次使用。",
               lbl_always_save_card_details_terms: "有关卡信息使用详情，请查看此处。",
               lbl_always_save_account_credentials_msg: "继续即表示您同意安全存储账户信息以供下次使用。",
               lbl_always_save_account_credentials_terms: "有关账户信息使用详情，请查看此处。",
+
+              // Buttons
+              btn_close: "关闭",
+              btn_pay: "支付",
+              btn_continue: "继续",
+
+              // Errors
               err_invalid_cardholder_name: "持卡人姓名无效",
               err_invalid_cardholder_name_characters: "请输入卡片上打印的有效姓名",
               err_invalid_creditcard: "请输入有效的卡号",
@@ -137,6 +144,8 @@
               err_ACG_RoutingNumber_exactlength: "必须正好9位数字",
               lbl_show_more: "显示更多",
               lbl_show_less: "显示更少",
+
+              // Additional messages
               add_upo_success_title: "成功",
               add_upo_decline_title: "拒绝",
               your_account_was_added_msg: "您的 {0} 账户已添加",
