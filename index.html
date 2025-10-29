@@ -1,163 +1,120 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8" />
-  <title>Nuvei Simply Connect 2.0 — Chinese i18n test</title>
+<script>
+  const initBtn = document.getElementById("initBtn");
+  const initResult = document.getElementById("initResult");
+  const transactionResult = document.getElementById("transactionResult");
+  const simplyConnectContainer = document.getElementById("simplyConnect");
 
-  <!-- SimplyConnect.js library -->
-  <script src="https://cdn.safecharge.com/safecharge_resources/v1/websdk//simplyConnect_v2.js"></script>
-
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    input, button { padding: 0.5em; font-size: 1em; margin: 0.5em 0; }
-    #simplyConnect { width: 420px; min-height: 400px; border: 1px solid #d3dce6; margin-top: 1em; padding: 0.5em; }
-    pre { background: #f5f5f5; padding: 1em; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
-    #resultContainer { margin-top: 2em; }
-    .muted { color: #666; font-size: 0.9em; }
-  </style>
-</head>
-<body>
-  <h2>Nuvei Simply Connect 2.0 — 中文测试</h2>
-
-  <p class="muted">将从 POST /orders 得到的 <code>sessionId</code> 粘贴到下面并点击“初始化”。</p>
-  <input type="text" id="sessionId" placeholder="请输入 sessionId" size="60" />
-  <button id="initBtn">初始化 Simply Connect</button>
-  <pre id="initResult"></pre>
-
-  <!-- Payment form container -->
-  <div id="simplyConnect">
-    <p>Simply Connect 支付表单将在此处渲染。</p>
-  </div>
-
-  <!-- Transaction result -->
-  <div id="resultContainer">
-    <h3>交易结果：</h3>
-    <pre id="transactionResult">尚未发生交易。</pre>
-  </div>
-
-  <script>
-    const initBtn = document.getElementById("initBtn");
-    const initResult = document.getElementById("initResult");
-    const transactionResult = document.getElementById("transactionResult");
-    const simplyConnectContainer = document.getElementById("simplyConnect");
-
-    function clearWidget() {
-      simplyConnectContainer.innerHTML = "";
-      simplyConnectContainer.style.display = "block";
+  // Add a Delete Payment Token button dynamically
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "🗑️ 删除保存的支付方式";
+  deleteBtn.style.marginLeft = "10px";
+  deleteBtn.addEventListener("click", () => {
+    const tokenId = prompt("请输入要删除的 paymentTokenId：");
+    if (!tokenId) {
+      alert("未输入 paymentTokenId。");
+      return;
     }
 
-    function initializeSimplyConnect(sessionId) {
-      clearWidget();
+    if (!window.simplyConnect || !window.simplyConnect.deletePaymentToken) {
+      alert("⚠️ Simply Connect 尚未初始化或不支持 deletePaymentToken。");
+      return;
+    }
 
-      // store sessionId for potential re-inits
-      window._currentSimplyConnectSessionId = sessionId;
+    window.simplyConnect.deletePaymentToken(tokenId)
+      .then(result => {
+        console.log("✅ 删除结果：", result);
+        alert("✅ 支付方式已删除。请查看控制台以了解详细信息。");
+      })
+      .catch(err => {
+        console.error("❌ 删除失败：", err);
+        alert("❌ 删除失败：" + (err?.message || JSON.stringify(err)));
+      });
+  });
 
-      try {
-        window.simplyConnect({
-          env: 'int', // 切换到 'prod' -> 生产环境
-          renderTo: "#simplyConnect",
-          sessionId: sessionId,
-          eventCallbacks: {
-            onResult: function(result) {
-              console.log("Transaction Result:", result);
-              if (!result || !result.result || !result.result.status) {
-                initResult.textContent = "❌ 支付失败：sessionId 无效或已过期。";
-                simplyConnectContainer.style.display = "none";
-                transactionResult.textContent = "因 session 问题未进行交易。";
-                return;
-              }
+  document.body.insertBefore(deleteBtn, document.getElementById("resultContainer"));
+
+  function clearWidget() {
+    simplyConnectContainer.innerHTML = "";
+    simplyConnectContainer.style.display = "block";
+  }
+
+  function initializeSimplyConnect(sessionId) {
+    clearWidget();
+    window._currentSimplyConnectSessionId = sessionId;
+
+    try {
+      window.simplyConnect({
+        env: 'int', // 'prod' for production
+        renderTo: "#simplyConnect",
+        sessionId: sessionId,
+        eventCallbacks: {
+          onResult: function(result) {
+            console.log("Transaction Result:", result);
+            if (!result || !result.result || !result.result.status) {
+              initResult.textContent = "❌ 支付失败：sessionId 无效或已过期。";
               simplyConnectContainer.style.display = "none";
-              transactionResult.textContent = JSON.stringify(result, null, 2);
-              initResult.textContent = `✅ 支付完成，状态：${result.result.status}`;
-            },
-            onError: function(error) {
-              console.error("Payment Error:", error);
-              initResult.textContent = "❌ 初始化或支付过程出错：" + (error?.reason || JSON.stringify(error));
-              simplyConnectContainer.style.display = "none";
-              transactionResult.textContent = "因错误未进行交易。";
-            },
-            // for debugging: print events so you can discover exact i18n keys if needed
-            onPaymentFormChange: function(evt) { console.debug("onPaymentFormChange:", evt); },
-            onSelectPaymentMethod: function(evt) { console.debug("onSelectPaymentMethod:", evt); }
+              transactionResult.textContent = "因 session 问题未进行交易。";
+              return;
+            }
+            simplyConnectContainer.style.display = "none";
+            transactionResult.textContent = JSON.stringify(result, null, 2);
+            initResult.textContent = `✅ 支付完成，状态：${result.result.status}`;
           },
-
-          // UI / i18n settings
-          uiConfig: {
-            // country and locale control filtering + displayed language
-            countryCode: "CN",
-            locale: "zh",      // 'zh' or 'zh-CN' — SDK uses this to pick locale
-            textDirection: "ltr",
-
-            // i18n override: keys shown in the Nuvei docs (examples).
-            // Provide Simplified Chinese translations here.
-            i18n: {
-              // card labels and titles
-              cc_card: "信用卡",
-              cc_card_aboveDetails: "信用卡详情",
-              lbl_my_methods: "我的支付方式",
-              lbl_other_methods: "请选择支付方式",
-              lbl_pm_details: "支付详情",
-
-              // delete token dialog / button
-              delete_payment_token_title: "删除支付令牌",
-              delete_payment_token_confirm: "确定要删除此支付令牌吗？此操作无法撤销。",
-              btn_delete_payment_token: "删除",
-
-              // pay button templates (SDK may replace {method} or show amount)
-              btn_pay_with: "使用 {method} 支付",
-              btn_pay: "支付",
-              btn_cancel: "取消",
-
-              // messages
-              msg_success: "支付成功",
-              msg_processing: "处理中，请稍候…",
-              msg_error: "发生错误，请稍后重试",
-              msg_invalid_session: "会话无效或已过期",
-
-              // validation labels
-              card_number: "卡号",
-              card_expiry: "有效期",
-              card_cvc: "安全码 (CVC)",
-              card_name: "持卡人姓名",
-
-              // other UI text
-              lbl_saved_cards: "已保存的卡片",
-              lbl_save_card: "保存此卡以便下次使用",
-              lbl_billing_address: "账单地址",
-              lbl_shipping_address: "送货地址",
-
-              // If you want to override response messages (declines), set error_i18n below
-            },
-
-            // Map decline reasons to custom messages (error_i18n)
-            error_i18n: {
-              decline: "您的支付被拒绝，请联系发卡行。",
-              timeoutretry: "连接超时，请重试。",
-              donothonor: "发卡行拒绝该交易，请联系银行。"
-            },
-
-            // optional: configure pay button type
-            payButton: 'textButton'
+          onError: function(error) {
+            console.error("Payment Error:", error);
+            initResult.textContent = "❌ 初始化或支付过程出错：" + (error?.reason || JSON.stringify(error));
+            simplyConnectContainer.style.display = "none";
+            transactionResult.textContent = "因错误未进行交易。";
           }
-        });
+        },
+        uiConfig: {
+          countryCode: "CN",
+          locale: "zh",
+          textDirection: "ltr",
+          i18n: {
+            cc_card: "信用卡",
+            lbl_my_methods: "我的支付方式",
+            lbl_other_methods: "请选择支付方式",
+            delete_payment_token_title: "删除支付令牌",
+            delete_payment_token_confirm: "确定要删除此支付令牌吗？此操作无法撤销。",
+            btn_delete_payment_token: "删除",
+            btn_pay_with: "使用 {method} 支付",
+            btn_pay: "支付",
+            btn_cancel: "取消",
+            msg_success: "支付成功",
+            msg_processing: "处理中，请稍候…",
+            msg_error: "发生错误，请稍后重试",
+            msg_invalid_session: "会话无效或已过期",
+            card_number: "卡号",
+            card_expiry: "有效期",
+            card_cvc: "安全码 (CVC)",
+            card_name: "持卡人姓名",
+            lbl_saved_cards: "已保存的卡片",
+            lbl_save_card: "保存此卡以便下次使用"
+          },
+          error_i18n: {
+            decline: "您的支付被拒绝，请联系发卡行。",
+            timeoutretry: "连接超时，请重试。",
+            donothonor: "发卡行拒绝该交易，请联系银行。"
+          },
+          payButton: 'textButton'
+        }
+      });
 
-        initResult.textContent = "✅ Simply Connect 初始化成功。支付表单应该已显示。";
-      } catch (err) {
-        console.error("初始化错误：", err);
-        initResult.textContent = "❌ 初始化失败：" + (err?.message || JSON.stringify(err));
-        simplyConnectContainer.style.display = "none";
-      }
+      initResult.textContent = "✅ Simply Connect 初始化成功。支付表单应该已显示。";
+    } catch (err) {
+      console.error("初始化错误：", err);
+      initResult.textContent = "❌ 初始化失败：" + (err?.message || JSON.stringify(err));
+      simplyConnectContainer.style.display = "none";
     }
+  }
 
-    // initialize on button click
-    initBtn.addEventListener("click", () => {
-      const sessionId = document.getElementById("sessionId").value.trim();
-      if (!sessionId) {
-        initResult.textContent = "❌ 请输入有效的 sessionId。";
-        return;
-      }
-      initializeSimplyConnect(sessionId);
-    });
-  </script>
-</body>
-</html>
+  initBtn.addEventListener("click", () => {
+    const sessionId = document.getElementById("sessionId").value.trim();
+    if (!sessionId) {
+      initResult.textContent = "❌ 请输入有效的 sessionId。";
+      return;
+    }
+    initializeSimplyConnect(sessionId);
+  });
+</script>
