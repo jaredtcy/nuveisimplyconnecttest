@@ -49,7 +49,7 @@
 
       try {
         window.simplyConnect({
-          env: 'int', // 'prod' for production
+          env: 'int',
           renderTo: "#simplyConnect",
           sessionId: sessionId,
           eventCallbacks: {
@@ -77,43 +77,73 @@
             locale: "zh-CN",
             textDirection: "ltr",
             i18n: {
-              // Card labels
+              cc_card: "卡",
+              lbl_my_methods: "我的支付方式",
+              lbl_other_methods: "请选择支付方式",
+              lbl_pm_details: "支付详情",
+              delete_payment_token_title: "删除支付令牌",
+              btn_pay_with: "使用 {method} 支付",
+              msg_success: "成功",
+              msg_success_text: "您的交易已成功批准。",
+              btn_ok: "确定",
+              remove_payment_method: "移除支付方式",
+              msg_del_confirm_msg: "移除后，该支付方式将不再可用。您确定吗？",
+              btn_yes_remove_it: "是，移除",
+              btn_cancel: "取消",
+              btn_remove: "移除",
+              msg_declined: "被拒绝",
+              msg_trx_failed_text: "支付交易失败。您是否想输入新的支付信息并重试？",
+              msg_payment_already_performed: "支付已完成！",
+              btn_refresh: "刷新",
+              msg_refresh_invalid_session: "看起来您操作时间较长。请点击刷新按钮重试。",
+              msg_pending: "交易待处理",
+              msg_apm_redirect: "未看到 {label} 购买页面？我们将帮助您返回窗口完成购买。",
               lbl_card_number: "卡号",
               lbl_cvv: "安全码 (CVC)",
               lbl_expiry_date: "有效期",
               lbl_card_holder_name: "持卡人姓名",
-
-              // Card placeholders
               ph_card_number: "1234-5678-1234-5678",
               ph_cvv: "123",
               ph_mm_yy: "MM/YY",
               ph_name_on_card: "张三",
-
-              // Sections
-              lbl_my_methods: "我的支付方式",
-              lbl_other_methods: "请选择支付方式",
-              lbl_pm_details: "支付详情",
-              lbl_saved_cards: "已保存的卡片",
-              lbl_save_card: "保存此卡以便下次使用",
-              lbl_billing_address: "账单地址",
-              lbl_shipping_address: "送货地址",
-
-              // Buttons
-              btn_pay_with: "使用 {method} 支付",
+              btn_close: "关闭",
               btn_pay: "支付",
-              btn_cancel: "取消",
-              btn_delete_payment_token: "删除",
-
-              // Messages
-              msg_success: "支付成功",
-              msg_processing: "处理中，请稍候…",
-              msg_error: "发生错误，请稍后重试",
-              msg_invalid_session: "会话无效或已过期"
-            },
-            error_i18n: {
-              decline: "您的支付被拒绝，请联系发卡行。",
-              timeoutretry: "连接超时，请重试。",
-              donothonor: "发卡行拒绝该交易，请联系银行。"
+              btn_continue: "继续",
+              lbl_save_details: "保存我的信息以便下次使用",
+              lbl_always_save_card_details_msg: "继续即表示您同意安全保存卡信息以便下次使用。",
+              lbl_always_save_card_details_terms: "有关如何以及何时使用卡信息的详细信息，请查看此处。",
+              lbl_always_save_account_credentials_msg: "继续即表示您同意安全保存账户信息以便下次使用。",
+              lbl_always_save_account_credentials_terms: "有关如何以及何时使用账户信息的详细信息，请查看此处。",
+              err_invalid_cardholder_name: "持卡人姓名无效",
+              err_invalid_cardholder_name_characters: "请输入卡上显示的有效持卡人姓名",
+              err_invalid_creditcard: "请输入有效的卡号",
+              err_invalid_expiration_date: "有效期无效",
+              err_invalid_cvv: "CVV 无效",
+              err_required_field: "此字段为必填",
+              err_ACG_AccountNumber_maxlength: "最多输入 17 个字符",
+              err_ACG_RoutingNumber_exactlength: "此字段必须为 9 位数字",
+              lbl_show_more: "显示更多",
+              lbl_show_less: "显示更少",
+              add_upo_success_title: "成功",
+              add_upo_decline_title: "被拒绝",
+              your_account_was_added_msg: "您的 {0} 账户已添加",
+              something_went_wrong_msg: "出现问题",
+              enter_amount: "输入金额",
+              open_amount_label: "最小 {0} - 最大 {1}",
+              not_in_range_open_amount: "金额必须在 {0} 与 {1} 之间",
+              block_card_msg: "{0} 卡无法处理",
+              msg_card_paste_blocked: "无法粘贴卡号",
+              lbl_or_pay_with: "或使用以下方式支付",
+              lbl_or_pay_with_card: "或使用信用卡支付",
+              lbl_promo_code: "有优惠码吗？",
+              ph_promo_code: "优惠码",
+              err_promo_code: "优惠码不能为空",
+              max_cards_msg: "无法保存新的附加卡",
+              max_apm_upos_msg: "无法保存新的附加支付方式",
+              one_per_apm_msg: "每个 {0} 账户仅允许一个",
+              select_pm_not_available: "{0} 无法选择",
+              select_upo_not_available: "无法选择 UPO",
+              lbl_scan_card_button: "扫描卡片"
             },
             payButton: 'textButton'
           }
