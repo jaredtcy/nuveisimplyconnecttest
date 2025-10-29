@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nuvei Simply Connect 2.0 Demo</title>
+
+  <!-- SimplyConnect.js library -->
+  <script src="https://cdn.safecharge.com/safecharge_resources/v1/websdk//simplyConnect_v2.js"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    input, button { padding: 0.5em; font-size: 1em; margin: 0.5em 0; }
+    #simplyConnect { width: 400px; height: 600px; border: 1px solid #d3dce6; margin-top: 1em; }
+    pre { background: #f5f5f5; padding: 1em; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
+    #resultContainer { margin-top: 2em; }
+  </style>
+</head>
+<body>
+  <h2>Nuvei Simply Connect 2.0 Demo</h2>
+
+  <p>Paste your <code>sessionId</code> from the POST /orders API:</p>
+  <input type="text" id="sessionId" placeholder="Enter sessionId" size="60" />
+  <button id="initBtn">Initialize Simply Connect</button>
+  <pre id="initResult"></pre>
+
+  <!-- Payment form container -->
+  <div id="simplyConnect">
+    <p>Simply Connect payment form will render here.</p>
+  </div>
+
+  <!-- Transaction result -->
+  <div id="resultContainer">
+    <h3>Transaction Result:</h3>
+    <pre id="transactionResult">No transaction yet.</pre>
+  </div>
+
+  <script>
+    const initBtn = document.getElementById("initBtn");
+    const initResult = document.getElementById("initResult");
+    const transactionResult = document.getElementById("transactionResult");
+    const simplyConnectContainer = document.getElementById("simplyConnect");
+
+    initBtn.addEventListener("click", () => {
+      const sessionId = document.getElementById("sessionId").value.trim();
+      if (!sessionId) {
+        initResult.textContent = "❌ Please enter a valid sessionId.";
+        return;
+      }
+
+      try {
+        window.simplyConnect({
+          env: 'int', // "prod" for production
+          renderTo: "#simplyConnect",
+          sessionId: sessionId,
+          eventCallbacks: {
+            onResult: function(result) {
+              console.log("Transaction Result:", result);
+
+              // If sessionId is invalid or result is missing
+              if (!result || !result.result || !result.result.status) {
+                initResult.textContent = "❌ Payment failed: invalid sessionId or session expired.";
+                simplyConnectContainer.style.display = "none";
+                transactionResult.textContent = "No transaction due to invalid session.";
+                return;
+              }
+
+              // Normal successful flow
+              simplyConnectContainer.style.display = "none";
+              transactionResult.textContent = JSON.stringify(result, null, 2);
+              initResult.textContent = `✅ Payment process completed. Status: ${result.result.status}`;
+            },
+            onError: function(error) {
+              console.error("Payment Error:", error);
+              initResult.textContent = "❌ Error during initialization or payment: " + 
+                                        (error?.reason || JSON.stringify(error));
+              simplyConnectContainer.style.display = "none";
+              transactionResult.textContent = "No transaction due to error.";
+            }
+          },
+          uiConfig: {
+            countryCode: "US",
+            locale: "en",
+            textDirection: "ltr"
+          }
+        });
+
+        initResult.textContent = "✅ Simply Connect initialized successfully. Payment form should appear below.";
+      } catch (err) {
+        initResult.textContent = "❌ Initialization failed: " + err.message;
+        simplyConnectContainer.style.display = "none";
+        transactionResult.textContent = "No transaction due to initialization error.";
+      }
+    });
+  </script>
+</body>
+</html>
