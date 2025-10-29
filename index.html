@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Nuvei Simply Connect 2.0 Demo</title>
+  <title>Nuvei Simply Connect 2.0 - deletePaymentToken demo</title>
 
   <!-- SimplyConnect.js library -->
   <script src="https://cdn.safecharge.com/safecharge_resources/v1/websdk/simplyConnect_v2.js"></script>
@@ -16,7 +16,7 @@
   </style>
 </head>
 <body>
-  <h2>Nuvei Simply Connect 2.0 Demo</h2>
+  <h2>Nuvei Simply Connect 2.0 - deletePaymentToken demo</h2>
 
   <p>Paste your <code>sessionId</code> from the POST /orders API:</p>
   <input type="text" id="sessionId" placeholder="Enter sessionId" size="60" />
@@ -40,78 +40,153 @@
     const transactionResult = document.getElementById("transactionResult");
     const simplyConnectContainer = document.getElementById("simplyConnect");
 
-    // Function to initialize SimplyConnect
-    function initializeSimplyConnect(sessionId) {
-      simplyConnectContainer.innerHTML = ""; // clear container before re-render
+    // Initialize wrapper so we can call it again
+    async function initializeSimplyConnect(sessionId) {
+      // defensive: clear container first so widget doesn't duplicate
+      simplyConnectContainer.innerHTML = "";
 
-      window.simplyConnect({
-        env: 'int', // change to 'prod' for production
-        renderTo: "#simplyConnect",
-        sessionId: sessionId,
-        eventCallbacks: {
-          onResult: function(result) {
-            console.log("Transaction Result:", result);
-            if (!result || !result.result || !result.result.status) {
-              initResult.textContent = "❌ Payment failed: invalid sessionId or session expired.";
+      // store the current sessionId so handlers can reuse or refresh
+      window._currentSimplyConnectSessionId = sessionId;
+
+      try {
+        window.simplyConnect({
+          env: 'int', // use 'prod' for production
+          renderTo: "#simplyConnect",
+          sessionId: sessionId,
+          eventCallbacks: {
+            onResult: function(result) {
+              console.log("Transaction Result:", result);
+              if (!result || !result.result || !result.result.status) {
+                initResult.textContent = "❌ Payment failed: invalid sessionId or session expired.";
+                simplyConnectContainer.style.display = "none";
+                transactionResult.textContent = "No transaction due to invalid session.";
+                return;
+              }
               simplyConnectContainer.style.display = "none";
-              transactionResult.textContent = "No transaction due to invalid session.";
-              return;
+              transactionResult.textContent = JSON.stringify(result, null, 2);
+              initResult.textContent = `✅ Payment process completed. Status: ${result.result.status}`;
+            },
+
+            onError: function(error) {
+              console.error("Payment Error:", error);
+              initResult.textContent = "❌ Error during initialization or payment: " +
+                                        (error?.reason || JSON.stringify(error));
+              simplyConnectContainer.style.display = "none";
+              transactionResult.textContent = "No transaction due to error.";
+            },
+
+            // This fires when the user clicks delete on a saved method in the UI.
+            // We'll call the SDK deletePaymentToken and then refresh the session.
+            onRemovePaymentOption: async function(event) {
+              console.log("onRemovePaymentOption event:", event);
+              initResult.textContent = "🗑️ Delete requested...";
+
+              // Try to extract a token id from the event — SDK may provide different keys
+              const tokenId = event?.paymentTokenId || event?.paymentOptionId || event?.tokenId || event?.id;
+              if (!tokenId) {
+                console.warn("No token id found on event. Event object:", event);
+                initResult.textContent = "⚠️ Cannot find token id on event. Check event payload in console.";
+                return;
+              }
+
+              // First attempt: use the SDK method (per docs)
+              if (window.simplyConnect && typeof window.simplyConnect.deletePaymentToken === 'function') {
+                try {
+                  initResult.textContent = "🧭 Calling simplyConnect.deletePaymentToken()...";
+                  const deleteResult = await window.simplyConnect.deletePaymentToken(tokenId);
+                  console.log("deletePaymentToken result:", deleteResult);
+
+                  // If SDK deletion succeeded, request a new session from backend (recommended)
+                  initResult.textContent = "✅ Token deleted via SDK — requesting refreshed session...";
+                  const newSessionId = await refreshSessionFromBackend(tokenId);
+                  if (newSessionId) {
+                    initResult.textContent = "♻️ Re-initializing widget with new session...";
+                    await initializeSimplyConnect(newSessionId);
+                  } else {
+                    initResult.textContent = "♻️ No new session from backend, re-rendering with same session (best-effort).";
+                    // best-effort re-render (may still show token if session cached server-side)
+                    await initializeSimplyConnect(window._currentSimplyConnectSessionId);
+                  }
+                } catch (sdkErr) {
+                  console.error("SDK deletePaymentToken() error:", sdkErr);
+                  initResult.textContent = "❌ deletePaymentToken failed: " + (sdkErr?.message || JSON.stringify(sdkErr));
+                  // fallback: attempt backend-driven delete + refresh
+                  const newSessionId = await refreshSessionFromBackend(tokenId, true);
+                  if (newSessionId) {
+                    initResult.textContent = "♻️ Backend forced refresh succeeded, re-initializing.";
+                    await initializeSimplyConnect(newSessionId);
+                  }
+                }
+              } else {
+                // SDK method not available — call backend to delete token and request a new session
+                initResult.textContent = "⚠️ deletePaymentToken() not available in SDK. Falling back to backend deletion...";
+                console.warn("simplyConnect.deletePaymentToken not found - calling backend.");
+                const newSessionId = await refreshSessionFromBackend(tokenId, true);
+                if (newSessionId) {
+                  initResult.textContent = "♻️ Backend deleted token and returned new session. Re-initializing.";
+                  await initializeSimplyConnect(newSessionId);
+                } else {
+                  initResult.textContent = "❌ Backend refresh failed. See console for details.";
+                }
+              }
             }
-
-            simplyConnectContainer.style.display = "none";
-            transactionResult.textContent = JSON.stringify(result, null, 2);
-            initResult.textContent = `✅ Payment process completed. Status: ${result.result.status}`;
           },
-
-          onError: function(error) {
-            console.error("Payment Error:", error);
-            initResult.textContent = "❌ Error during initialization or payment: " +
-                                      (error?.reason || JSON.stringify(error));
-            simplyConnectContainer.style.display = "none";
-            transactionResult.textContent = "No transaction due to error.";
-          },
-
-          // 🔥 Detects when a user deletes a saved payment method
-          onRemovePaymentOption: async function(event) {
-            console.log("Payment option removed:", event);
-
-            // OPTIONAL: call your backend to delete from Nuvei
-            // await fetch('/delete-payment-method', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify({ paymentMethodId: event.paymentOptionId })
-            // });
-
-            // Refresh the UI (re-render SimplyConnect)
-            initResult.textContent = "♻️ Payment option removed. Refreshing form...";
-            simplyConnectContainer.innerHTML = "";
-            initializeSimplyConnect(sessionId);
+          uiConfig: {
+            countryCode: "US",
+            locale: "en",
+            textDirection: "ltr"
           }
-        },
-        uiConfig: {
-          countryCode: "US",
-          locale: "en",
-          textDirection: "ltr"
-        }
-      });
+        });
 
-      initResult.textContent = "✅ Simply Connect initialized successfully. Payment form should appear below.";
+        initResult.textContent = "✅ Simply Connect initialized successfully. Payment form should appear below.";
+      } catch (err) {
+        console.error("Initialization error:", err);
+        initResult.textContent = "❌ Initialization failed: " + (err?.message || JSON.stringify(err));
+        simplyConnectContainer.style.display = "none";
+        transactionResult.textContent = "No transaction due to initialization error.";
+      }
     }
 
-    // Event listener for the Initialize button
+    // Ask your backend for a fresh sessionId after deletion.
+    // Backend contract (example):
+    // POST /orders/refresh-session
+    // body: { deletedTokenId: "..." }
+    // response: { sessionId: "..." }
+    async function refreshSessionFromBackend(deletedTokenId, attemptDelete = false) {
+      try {
+        // replace the URL with your real endpoint
+        const resp = await fetch('/orders/refresh-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deletedTokenId, attemptDelete })
+        });
+
+        if (!resp.ok) {
+          console.warn("Backend refresh-session returned non-OK:", resp.status);
+          return null;
+        }
+        const data = await resp.json();
+        if (data && data.sessionId) {
+          console.log("Received new sessionId from backend:", data.sessionId);
+          return data.sessionId;
+        } else {
+          console.warn("Backend refresh-session did not return sessionId. Response:", data);
+          return null;
+        }
+      } catch (err) {
+        console.error("Error calling backend refresh-session:", err);
+        return null;
+      }
+    }
+
+    // wire the button
     initBtn.addEventListener("click", () => {
       const sessionId = document.getElementById("sessionId").value.trim();
       if (!sessionId) {
         initResult.textContent = "❌ Please enter a valid sessionId.";
         return;
       }
-      try {
-        initializeSimplyConnect(sessionId);
-      } catch (err) {
-        initResult.textContent = "❌ Initialization failed: " + err.message;
-        simplyConnectContainer.style.display = "none";
-        transactionResult.textContent = "No transaction due to initialization error.";
-      }
+      initializeSimplyConnect(sessionId);
     });
   </script>
 </body>
