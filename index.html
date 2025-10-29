@@ -1,37 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>Nuvei Simply Connect 2.0 - deletePaymentToken demo</title>
+  <title>Nuvei Simply Connect 2.0 — Chinese i18n test</title>
 
   <!-- SimplyConnect.js library -->
-  <script src="https://cdn.safecharge.com/safecharge_resources/v1/websdk/simplyConnect_v2.js"></script>
+  <script src="https://cdn.safecharge.com/safecharge_resources/v1/websdk//simplyConnect_v2.js"></script>
 
   <style>
     body { font-family: Arial, sans-serif; margin: 2em; }
     input, button { padding: 0.5em; font-size: 1em; margin: 0.5em 0; }
-    #simplyConnect { width: 400px; height: 600px; border: 1px solid #d3dce6; margin-top: 1em; }
+    #simplyConnect { width: 420px; min-height: 400px; border: 1px solid #d3dce6; margin-top: 1em; padding: 0.5em; }
     pre { background: #f5f5f5; padding: 1em; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }
     #resultContainer { margin-top: 2em; }
+    .muted { color: #666; font-size: 0.9em; }
   </style>
 </head>
 <body>
-  <h2>Nuvei Simply Connect 2.0 - deletePaymentToken demo</h2>
+  <h2>Nuvei Simply Connect 2.0 — 中文测试</h2>
 
-  <p>Paste your <code>sessionId</code> from the POST /orders API:</p>
-  <input type="text" id="sessionId" placeholder="Enter sessionId" size="60" />
-  <button id="initBtn">Initialize Simply Connect</button>
+  <p class="muted">将从 POST /orders 得到的 <code>sessionId</code> 粘贴到下面并点击“初始化”。</p>
+  <input type="text" id="sessionId" placeholder="请输入 sessionId" size="60" />
+  <button id="initBtn">初始化 Simply Connect</button>
   <pre id="initResult"></pre>
 
   <!-- Payment form container -->
   <div id="simplyConnect">
-    <p>Simply Connect payment form will render here.</p>
+    <p>Simply Connect 支付表单将在此处渲染。</p>
   </div>
 
   <!-- Transaction result -->
   <div id="resultContainer">
-    <h3>Transaction Result:</h3>
-    <pre id="transactionResult">No transaction yet.</pre>
+    <h3>交易结果：</h3>
+    <pre id="transactionResult">尚未发生交易。</pre>
   </div>
 
   <script>
@@ -40,150 +41,119 @@
     const transactionResult = document.getElementById("transactionResult");
     const simplyConnectContainer = document.getElementById("simplyConnect");
 
-    // Initialize wrapper so we can call it again
-    async function initializeSimplyConnect(sessionId) {
-      // defensive: clear container first so widget doesn't duplicate
+    function clearWidget() {
       simplyConnectContainer.innerHTML = "";
+      simplyConnectContainer.style.display = "block";
+    }
 
-      // store the current sessionId so handlers can reuse or refresh
+    function initializeSimplyConnect(sessionId) {
+      clearWidget();
+
+      // store sessionId for potential re-inits
       window._currentSimplyConnectSessionId = sessionId;
 
       try {
         window.simplyConnect({
-          env: 'int', // use 'prod' for production
+          env: 'int', // 切换到 'prod' -> 生产环境
           renderTo: "#simplyConnect",
           sessionId: sessionId,
           eventCallbacks: {
             onResult: function(result) {
               console.log("Transaction Result:", result);
               if (!result || !result.result || !result.result.status) {
-                initResult.textContent = "❌ Payment failed: invalid sessionId or session expired.";
+                initResult.textContent = "❌ 支付失败：sessionId 无效或已过期。";
                 simplyConnectContainer.style.display = "none";
-                transactionResult.textContent = "No transaction due to invalid session.";
+                transactionResult.textContent = "因 session 问题未进行交易。";
                 return;
               }
               simplyConnectContainer.style.display = "none";
               transactionResult.textContent = JSON.stringify(result, null, 2);
-              initResult.textContent = `✅ Payment process completed. Status: ${result.result.status}`;
+              initResult.textContent = `✅ 支付完成，状态：${result.result.status}`;
             },
-
             onError: function(error) {
               console.error("Payment Error:", error);
-              initResult.textContent = "❌ Error during initialization or payment: " +
-                                        (error?.reason || JSON.stringify(error));
+              initResult.textContent = "❌ 初始化或支付过程出错：" + (error?.reason || JSON.stringify(error));
               simplyConnectContainer.style.display = "none";
-              transactionResult.textContent = "No transaction due to error.";
+              transactionResult.textContent = "因错误未进行交易。";
+            },
+            // for debugging: print events so you can discover exact i18n keys if needed
+            onPaymentFormChange: function(evt) { console.debug("onPaymentFormChange:", evt); },
+            onSelectPaymentMethod: function(evt) { console.debug("onSelectPaymentMethod:", evt); }
+          },
+
+          // UI / i18n settings
+          uiConfig: {
+            // country and locale control filtering + displayed language
+            countryCode: "CN",
+            locale: "zh",      // 'zh' or 'zh-CN' — SDK uses this to pick locale
+            textDirection: "ltr",
+
+            // i18n override: keys shown in the Nuvei docs (examples).
+            // Provide Simplified Chinese translations here.
+            i18n: {
+              // card labels and titles
+              cc_card: "信用卡",
+              cc_card_aboveDetails: "信用卡详情",
+              lbl_my_methods: "我的支付方式",
+              lbl_other_methods: "请选择支付方式",
+              lbl_pm_details: "支付详情",
+
+              // delete token dialog / button
+              delete_payment_token_title: "删除支付令牌",
+              delete_payment_token_confirm: "确定要删除此支付令牌吗？此操作无法撤销。",
+              btn_delete_payment_token: "删除",
+
+              // pay button templates (SDK may replace {method} or show amount)
+              btn_pay_with: "使用 {method} 支付",
+              btn_pay: "支付",
+              btn_cancel: "取消",
+
+              // messages
+              msg_success: "支付成功",
+              msg_processing: "处理中，请稍候…",
+              msg_error: "发生错误，请稍后重试",
+              msg_invalid_session: "会话无效或已过期",
+
+              // validation labels
+              card_number: "卡号",
+              card_expiry: "有效期",
+              card_cvc: "安全码 (CVC)",
+              card_name: "持卡人姓名",
+
+              // other UI text
+              lbl_saved_cards: "已保存的卡片",
+              lbl_save_card: "保存此卡以便下次使用",
+              lbl_billing_address: "账单地址",
+              lbl_shipping_address: "送货地址",
+
+              // If you want to override response messages (declines), set error_i18n below
             },
 
-            // This fires when the user clicks delete on a saved method in the UI.
-            // We'll call the SDK deletePaymentToken and then refresh the session.
-            onRemovePaymentOption: async function(event) {
-              console.log("onRemovePaymentOption event:", event);
-              initResult.textContent = "🗑️ Delete requested...";
+            // Map decline reasons to custom messages (error_i18n)
+            error_i18n: {
+              decline: "您的支付被拒绝，请联系发卡行。",
+              timeoutretry: "连接超时，请重试。",
+              donothonor: "发卡行拒绝该交易，请联系银行。"
+            },
 
-              // Try to extract a token id from the event — SDK may provide different keys
-              const tokenId = event?.paymentTokenId || event?.paymentOptionId || event?.tokenId || event?.id;
-              if (!tokenId) {
-                console.warn("No token id found on event. Event object:", event);
-                initResult.textContent = "⚠️ Cannot find token id on event. Check event payload in console.";
-                return;
-              }
-
-              // First attempt: use the SDK method (per docs)
-              if (window.simplyConnect && typeof window.simplyConnect.deletePaymentToken === 'function') {
-                try {
-                  initResult.textContent = "🧭 Calling simplyConnect.deletePaymentToken()...";
-                  const deleteResult = await window.simplyConnect.deletePaymentToken(tokenId);
-                  console.log("deletePaymentToken result:", deleteResult);
-
-                  // If SDK deletion succeeded, request a new session from backend (recommended)
-                  initResult.textContent = "✅ Token deleted via SDK — requesting refreshed session...";
-                  const newSessionId = await refreshSessionFromBackend(tokenId);
-                  if (newSessionId) {
-                    initResult.textContent = "♻️ Re-initializing widget with new session...";
-                    await initializeSimplyConnect(newSessionId);
-                  } else {
-                    initResult.textContent = "♻️ No new session from backend, re-rendering with same session (best-effort).";
-                    // best-effort re-render (may still show token if session cached server-side)
-                    await initializeSimplyConnect(window._currentSimplyConnectSessionId);
-                  }
-                } catch (sdkErr) {
-                  console.error("SDK deletePaymentToken() error:", sdkErr);
-                  initResult.textContent = "❌ deletePaymentToken failed: " + (sdkErr?.message || JSON.stringify(sdkErr));
-                  // fallback: attempt backend-driven delete + refresh
-                  const newSessionId = await refreshSessionFromBackend(tokenId, true);
-                  if (newSessionId) {
-                    initResult.textContent = "♻️ Backend forced refresh succeeded, re-initializing.";
-                    await initializeSimplyConnect(newSessionId);
-                  }
-                }
-              } else {
-                // SDK method not available — call backend to delete token and request a new session
-                initResult.textContent = "⚠️ deletePaymentToken() not available in SDK. Falling back to backend deletion...";
-                console.warn("simplyConnect.deletePaymentToken not found - calling backend.");
-                const newSessionId = await refreshSessionFromBackend(tokenId, true);
-                if (newSessionId) {
-                  initResult.textContent = "♻️ Backend deleted token and returned new session. Re-initializing.";
-                  await initializeSimplyConnect(newSessionId);
-                } else {
-                  initResult.textContent = "❌ Backend refresh failed. See console for details.";
-                }
-              }
-            }
-          },
-          uiConfig: {
-            countryCode: "US",
-            locale: "en",
-            textDirection: "ltr"
+            // optional: configure pay button type
+            payButton: 'textButton'
           }
         });
 
-        initResult.textContent = "✅ Simply Connect initialized successfully. Payment form should appear below.";
+        initResult.textContent = "✅ Simply Connect 初始化成功。支付表单应该已显示。";
       } catch (err) {
-        console.error("Initialization error:", err);
-        initResult.textContent = "❌ Initialization failed: " + (err?.message || JSON.stringify(err));
+        console.error("初始化错误：", err);
+        initResult.textContent = "❌ 初始化失败：" + (err?.message || JSON.stringify(err));
         simplyConnectContainer.style.display = "none";
-        transactionResult.textContent = "No transaction due to initialization error.";
       }
     }
 
-    // Ask your backend for a fresh sessionId after deletion.
-    // Backend contract (example):
-    // POST /orders/refresh-session
-    // body: { deletedTokenId: "..." }
-    // response: { sessionId: "..." }
-    async function refreshSessionFromBackend(deletedTokenId, attemptDelete = false) {
-      try {
-        // replace the URL with your real endpoint
-        const resp = await fetch('/orders/refresh-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ deletedTokenId, attemptDelete })
-        });
-
-        if (!resp.ok) {
-          console.warn("Backend refresh-session returned non-OK:", resp.status);
-          return null;
-        }
-        const data = await resp.json();
-        if (data && data.sessionId) {
-          console.log("Received new sessionId from backend:", data.sessionId);
-          return data.sessionId;
-        } else {
-          console.warn("Backend refresh-session did not return sessionId. Response:", data);
-          return null;
-        }
-      } catch (err) {
-        console.error("Error calling backend refresh-session:", err);
-        return null;
-      }
-    }
-
-    // wire the button
+    // initialize on button click
     initBtn.addEventListener("click", () => {
       const sessionId = document.getElementById("sessionId").value.trim();
       if (!sessionId) {
-        initResult.textContent = "❌ Please enter a valid sessionId.";
+        initResult.textContent = "❌ 请输入有效的 sessionId。";
         return;
       }
       initializeSimplyConnect(sessionId);
