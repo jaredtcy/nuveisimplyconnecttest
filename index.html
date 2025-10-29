@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <title>Nuvei Simply Connect 2.0 — 中文演示</title>
@@ -38,65 +38,73 @@
     const transactionResult = document.getElementById("transactionResult");
     const simplyConnectContainer = document.getElementById("simplyConnect");
 
-    initBtn.addEventListener("click", () => {
-      const sessionId = document.getElementById("sessionId").value.trim();
-      if (!sessionId) {
-        initResult.textContent = "❌ 请输入有效的 sessionId。";
-        return;
-      }
+    function clearWidget() {
+      simplyConnectContainer.innerHTML = "";
+      simplyConnectContainer.style.display = "block";
+    }
+
+    function initializeSimplyConnect(sessionId) {
+      clearWidget();
+      window._currentSimplyConnectSessionId = sessionId;
 
       try {
         window.simplyConnect({
-          env: 'int', // "prod" for production
+          env: 'int', // 'prod' for production
           renderTo: "#simplyConnect",
           sessionId: sessionId,
           eventCallbacks: {
             onResult: function(result) {
               console.log("交易结果:", result);
-
               if (!result || !result.result || !result.result.status) {
                 initResult.textContent = "❌ 支付失败：sessionId 无效或已过期。";
                 simplyConnectContainer.style.display = "none";
                 transactionResult.textContent = "因 session 问题未进行交易。";
                 return;
               }
-
               simplyConnectContainer.style.display = "none";
               transactionResult.textContent = JSON.stringify(result, null, 2);
               initResult.textContent = `✅ 支付完成，状态：${result.result.status}`;
             },
             onError: function(error) {
               console.error("支付错误:", error);
-              initResult.textContent = "❌ 初始化或支付过程出错：" + 
-                                        (error?.reason || JSON.stringify(error));
+              initResult.textContent = "❌ 初始化或支付过程出错：" + (error?.reason || JSON.stringify(error));
               simplyConnectContainer.style.display = "none";
               transactionResult.textContent = "因错误未进行交易。";
             }
           },
           uiConfig: {
             countryCode: "CN",
-            locale: "zh",
+            locale: "zh-CN",
             textDirection: "ltr",
             i18n: {
+              // New card fields
               cc_card: "信用卡",
-              lbl_my_methods: "我的支付方式",
-              lbl_other_methods: "请选择支付方式",
-              lbl_pm_details: "支付详情",
-              btn_pay_with: "使用 {method} 支付",
-              btn_pay: "支付",
-              btn_cancel: "取消",
-              msg_success: "支付成功",
-              msg_processing: "处理中，请稍候…",
-              msg_error: "发生错误，请稍后重试",
-              msg_invalid_session: "会话无效或已过期",
+              cc_card_aboveDetails: "信用卡详情",
               card_number: "卡号",
               card_expiry: "有效期",
               card_cvc: "安全码 (CVC)",
               card_name: "持卡人姓名",
+
+              // Sections
+              lbl_my_methods: "我的支付方式",
+              lbl_other_methods: "请选择支付方式",
+              lbl_pm_details: "支付详情",
               lbl_saved_cards: "已保存的卡片",
               lbl_save_card: "保存此卡以便下次使用",
               lbl_billing_address: "账单地址",
-              lbl_shipping_address: "送货地址"
+              lbl_shipping_address: "送货地址",
+
+              // Buttons
+              btn_pay_with: "使用 {method} 支付",
+              btn_pay: "支付",
+              btn_cancel: "取消",
+              btn_delete_payment_token: "删除",
+
+              // Messages
+              msg_success: "支付成功",
+              msg_processing: "处理中，请稍候…",
+              msg_error: "发生错误，请稍后重试",
+              msg_invalid_session: "会话无效或已过期"
             },
             error_i18n: {
               decline: "您的支付被拒绝，请联系发卡行。",
@@ -109,10 +117,20 @@
 
         initResult.textContent = "✅ Simply Connect 初始化成功。支付表单已显示。";
       } catch (err) {
+        console.error("初始化错误：", err);
         initResult.textContent = "❌ 初始化失败：" + (err?.message || JSON.stringify(err));
         simplyConnectContainer.style.display = "none";
         transactionResult.textContent = "因初始化错误未进行交易。";
       }
+    }
+
+    initBtn.addEventListener("click", () => {
+      const sessionId = document.getElementById("sessionId").value.trim();
+      if (!sessionId) {
+        initResult.textContent = "❌ 请输入有效的 sessionId。";
+        return;
+      }
+      initializeSimplyConnect(sessionId);
     });
   </script>
 </body>
