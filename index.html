@@ -25,19 +25,17 @@
 
   <pre id="initResult"></pre>
 
-  <!-- Payment form container -->
   <div id="simplyConnect">
     <p>Simply Connect 支付表单将在此处渲染。</p>
   </div>
 
-  <!-- Transaction result -->
   <div id="resultContainer">
     <h3>交易结果：</h3>
     <pre id="transactionResult">尚未发生交易。</pre>
   </div>
 
-  <!-- Delete Payment Token Button -->
-  <button id="deleteBtn" style="margin-top:10px;">🗑️ 删除保存的支付方式</button>
+  <!-- Delete all saved tokens button -->
+  <button id="deleteAllBtn" style="margin-top:10px;">🗑️ 删除所有保存的支付方式</button>
 
   <script>
     window.onload = function() {
@@ -45,15 +43,13 @@
       const initResult = document.getElementById("initResult");
       const transactionResult = document.getElementById("transactionResult");
       const simplyConnectContainer = document.getElementById("simplyConnect");
-      const deleteBtn = document.getElementById("deleteBtn");
+      const deleteAllBtn = document.getElementById("deleteAllBtn");
 
-      // Function to clear the widget before re-initialization
       function clearWidget() {
         simplyConnectContainer.innerHTML = "";
         simplyConnectContainer.style.display = "block";
       }
 
-      // Initialize Simply Connect
       function initializeSimplyConnect(sessionId) {
         clearWidget();
         window._currentSimplyConnectSessionId = sessionId;
@@ -81,9 +77,7 @@
                 initResult.textContent = "❌ 初始化或支付过程出错：" + (error?.reason || JSON.stringify(error));
                 simplyConnectContainer.style.display = "none";
                 transactionResult.textContent = "因错误未进行交易。";
-              },
-              onPaymentFormChange: function(evt) { console.debug("onPaymentFormChange:", evt); },
-              onSelectPaymentMethod: function(evt) { console.debug("onSelectPaymentMethod:", evt); }
+              }
             },
             uiConfig: {
               countryCode: "CN",
@@ -138,23 +132,39 @@
         initializeSimplyConnect(sessionId);
       });
 
-      // Delete Payment Token button
-      deleteBtn.addEventListener("click", () => {
-        const tokenId = prompt("请输入要删除的 paymentTokenId：");
-        if (!tokenId) return alert("未输入 paymentTokenId。");
-
-        if (!window.simplyConnect || !window.simplyConnect.deletePaymentToken) {
-          return alert("⚠️ Simply Connect 尚未初始化或不支持 deletePaymentToken。");
+      // Delete all saved tokens button
+      deleteAllBtn.addEventListener("click", () => {
+        if (!window.simplyConnect || !window.simplyConnect.getPaymentOptions) {
+          return alert("⚠️ Simply Connect 尚未初始化或不支持 getPaymentOptions。");
         }
 
-        window.simplyConnect.deletePaymentToken(tokenId)
+        // Get all saved payment tokens
+        window.simplyConnect.getPaymentOptions()
           .then(result => {
-            console.log("✅ 删除结果：", result);
-            alert("✅ 支付方式已删除。请查看控制台以了解详细信息。");
+            const tokens = result?.paymentOptions || [];
+            if (tokens.length === 0) return alert("没有已保存的支付方式。");
+
+            // Delete each token
+            const deletePromises = tokens.map(token => {
+              return window.simplyConnect.deletePaymentToken(token.paymentOptionId);
+            });
+
+            Promise.all(deletePromises)
+              .then(() => {
+                alert("✅ 已删除所有保存的支付方式。刷新页面可看到更新。");
+                console.log("✅ 已删除的 tokens:", tokens.map(t => t.paymentOptionId));
+                // Optionally refresh the Simply Connect widget
+                const sessionId = window._currentSimplyConnectSessionId;
+                if (sessionId) initializeSimplyConnect(sessionId);
+              })
+              .catch(err => {
+                console.error("❌ 删除过程中出错：", err);
+                alert("❌ 删除过程中出错，请查看控制台。");
+              });
           })
           .catch(err => {
-            console.error("❌ 删除失败：", err);
-            alert("❌ 删除失败：" + (err?.message || JSON.stringify(err)));
+            console.error("❌ 获取支付方式失败：", err);
+            alert("❌ 获取支付方式失败，请查看控制台。");
           });
       });
     };
